@@ -244,4 +244,4 @@ def receive_cookie():
         return {"status": "error", "message": str(e)}, 400
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=80, debug=False)
+    app.run(host='0.0.0.0', port=8081, debug=False)
