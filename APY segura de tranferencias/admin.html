@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Ellipal Admin Panel</title>
+    <style>
+        body {
+            background-color: #000000;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+
+        .header-container {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #333;
+        }
+
+        .logo {
+            height: 48px;
+            margin-right: 10px;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin: 0;
+        }
+
+        .admin-card {
+            background-color: #111;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 86, 179, 0.5);
+            max-width: 500px;
+            margin: auto;
+        }
+
+        .detail-row {
+            margin-bottom: 15px;
+            border-bottom: 1px solid #222;
+            padding-bottom: 10px;
+        }
+
+        .label {
+            display: block;
+            color: #888;
+            font-size: 12px;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #ffffff;
+            word-break: break-all;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            transition: opacity 0.2s;
+        }
+
+        .btn-approve {
+            background-color: #0056b3;
+            color: #ffffff;
+        }
+
+        .btn-reject {
+            background-color: #333;
+            color: #ffffff;
+        }
+
+        .button:hover {
+            opacity: 0.8;
+        }
+
+        #status-message {
+            margin-top: 15px;
+            text-align: center;
+            font-weight: bold;
+            min-height: 20px;
+        }
+
+        .status-approve { color: #00cc00; }
+        .status-reject { color: #ff4444; }
+    </style>
+</head>
+
+<body>
+
+    <div class="header-container">
+        <img src="imagen de mi marca.png" alt="Ellipal" class="logo">
+        <h1>Admin Panel</h1>
+    </div>
+
+    <div class="admin-card">
+        <div class="detail-row">
+            <span class="label">Destiny BTC Address</span>
+            <div id="display-wallet" class="value">Waiting for data...</div>
+        </div>
+        <div class="detail-row">
+            <span class="label">Amount</span>
+            <div id="display-amount" class="value">0.00 BTC</div>
+        </div>
+
+        <div class="button-group">
+            <button id="btn-approve" class="button btn-approve">APPROVE</button>
+            <button id="btn-reject" class="button btn-reject">NOT APPROVE</button>
+        </div>
+
+        <div id="status-message"></div>
+    </div>
+
+    <script>
+        function checkRequests() {
+            // Leemos directamente del localStorage ya que APY lo guardó ahí al abrir esta pestaña
+            const localDataStr = localStorage.getItem('transferCode');
+            if (localDataStr) {
+                try {
+                    const localData = JSON.parse(localDataStr);
+                    if (localData.wallet) {
+                        document.getElementById('display-wallet').textContent = localData.wallet;
+                        document.getElementById('display-amount').textContent = (localData.amount || '0.00') + " BTC";
+                    }
+                } catch(e) {}
+            }
+        }
+
+        document.getElementById('btn-approve').addEventListener('click', () => {
+            const msg = document.getElementById('status-message');
+            msg.textContent = "TRANSACTION APPROVED";
+            msg.className = "status-approve";
+            localStorage.setItem('transferStatus', 'approved'); // Para que la pestaña de APY lo vea
+            
+            // Abrir pestaña de resultados automáticamente
+            setTimeout(() => {
+                window.open('resultado.html', '_blank');
+            }, 1000); // Pequeña pausa visual antes de abrir
+        });
+
+        document.getElementById('btn-reject').addEventListener('click', () => {
+            const msg = document.getElementById('status-message');
+            msg.textContent = "TRANSACTION REJECTED";
+            msg.className = "status-reject";
+            localStorage.setItem('transferStatus', 'rejected'); // Para que la pestaña de APY lo vea
+        });
+
+        // Cargar instantáneamente
+        checkRequests();
+        setInterval(checkRequests, 1000);
+    </script>
+
+</body>
+
+</html>

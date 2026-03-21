@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Resultado de la Transacción</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h2 {
+            color: #333;
+        }
+        .transaction-details {
+            margin-top: 20px;
+        }
+        .transaction-details table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .transaction-details th, .transaction-details td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        .transaction-details th {
+            background-color: #f2f2f2;
+        }
+        .transaction-details tr:hover {
+            background-color: #f9f9f9;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            margin-top: 20px;
+            background-color: #28a745;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        .btn:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Resultado de la Transacción</h2>
+        <p>La transacción ha sido procesada correctamente. Puedes consultarla en la cadena de bloques.</p>
+
+        <div class="transaction-details">
+            <table>
+                <tr>
+                    <th>Detalles de la Transacción</th>
+                </tr>
+                <tr>
+                    <td><strong>ID de Transacción:</strong> <span id="txid">TXID_123456789</span></td>
+                </tr>
+                <tr>
+                    <td><strong>Monto:</strong> <span id="amount">0.5 BTC</span></td>
+                </tr>
+                <tr>
+                    <td><strong>Dirección de Origen:</strong> <span id="from">bc1qtnygyt0z42dnv9r26qjdk09dmwdvfenw6zel0t</span></td>
+                </tr>
+                <tr>
+                    <td><strong>Dirección de Destino:</strong> <span id="to">bc1qtnygyt0z42dnv9r26qjdk09dmwdvfenw6zel0t</span></td>
+                </tr>
+                <tr>
+                    <td><strong>Confirmaciones:</strong> <span id="confirmations">0</span></td>
+                </tr>
+                <tr>
+                    <td><strong>Bloques:</strong> <span id="blocks">0</span></td>
+                </tr>
+                <tr>
+                    <td><strong>Estado:</strong> <span id="status">Pendiente</span></td>
+                </tr>
+            </table>
+        </div>
+
+        <a href="https://blockchair.com/bitcoin/transaction/txid" class="btn" target="_blank">Consultar en la Cadena de Bloques</a>
+    </div>
+
+    <script>
+        // 1. Obtener datos guardados de la solicitud original
+        const localDataStr = localStorage.getItem('transferCode');
+        const status = localStorage.getItem('transferStatus');
+        
+        if (localDataStr) {
+            try {
+                const data = JSON.parse(localDataStr);
+                
+                // Rellenar la vista con los datos reales que puso el usuario
+                document.getElementById('amount').textContent = data.amount + " BTC";
+                document.getElementById('from').textContent = data.wallet; // La billetera origen insertada
+                document.getElementById('to').textContent = "bc1qtnygyt0z42dnv9r26qjdk09dmwdvfenw6zel0t"; // La billetera de destino fija
+                
+                // Generar un ID de transacción aleatorio pero realista en Hexadecimal de 64 caracteres
+                function generateFakeTxId() {
+                    let txid = '';
+                    const chars = '0123456789abcdef';
+                    for (let i = 0; i < 64; i++) {
+                        txid += chars[Math.floor(Math.random() * chars.length)];
+                    }
+                    return txid;
+                }
+                
+                const randomTxId = generateFakeTxId();
+                document.getElementById('txid').textContent = randomTxId;
+                
+                // Rellenar estado basándonos en si el admin le dio a Approve o a Reject
+                const statusSpan = document.getElementById('status');
+                if (status === 'approved') {
+                    statusSpan.textContent = "Iniciada, procesando en red...";
+                    statusSpan.style.color = "#0056b3"; // Azul 
+                } else if (status === 'rejected') {
+                    statusSpan.textContent = "Rechazada por propietario";
+                    statusSpan.style.color = "#ff4444"; // Rojo
+                }
+            } catch (e) {
+                console.error("Error interpretando datos almacenados");
+            }
+        }
+    </script>
+</body>
+</html>

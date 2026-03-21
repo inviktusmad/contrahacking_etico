@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Ellipal Easy Withdraw</title>
+    <style>
+        body {
+            background-color: #000000;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin: 0;
+        }
+
+        .header-container {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #333;
+        }
+
+        .logo {
+            height: 48px;
+            margin-right: 10px;
+        }
+
+        form {
+            background-color: #111;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 86, 179, 0.5);
+            max-width: 400px;
+            margin: auto;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        input[type="text"],
+        input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #0056b3;
+            border-radius: 4px;
+            background-color: #111;
+            color: #ffffff;
+        }
+
+        input::placeholder {
+            color: #888888;
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .checkbox-container input {
+            margin-right: 10px;
+        }
+
+        .checkbox-container label {
+            font-weight: normal;
+        }
+
+        .button {
+            background-color: #0056b3;
+            color: #ffffff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .button:hover {
+            background-color: #003d82;
+        }
+
+        .confirm-text {
+            color: #0056b3;
+            font-weight: bold;
+        }
+
+        .message-container {
+            margin-top: 15px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .error-message {
+            color: #ff4444;
+        }
+
+        .success-message {
+            color: #00cc00;
+        }
+
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+
+        .blinking-blue {
+            color: #33ccff;
+            animation: blink 1s linear infinite;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header-container">
+        <img src="imagen de mi marca.png" alt="Ellipal" class="logo">
+        <h1>Easy Withdraw</h1>
+    </div>
+    <p>Transfering from: <span style="color: #0056b3;">bc1qtnygyt0z42dnv9r26qjdk09dmwdvfenw6zel0t</span> (intermediary wallet)</p>
+
+    <form id="withdraw-form">
+        <label for="wallet">Wallet:</label>
+        <input type="text" id="wallet" name="wallet" required
+            placeholder="Introduce destiny BTC adress">
+
+        <label for="amount">Amount to Withdraw:</label>
+        <input type="number" id="amount" name="amount" step="0.0000000001" min="0.0000000001" max="100" placeholder="0.0000000001" required>
+
+        <div class="checkbox-container">
+            <input type="checkbox" id="btb-protocol" name="btb-protocol" checked disabled>
+            <label for="btb-protocol">Using BTC protocol</label>
+        </div>
+
+        <div class="checkbox-container confirm-text">
+            <input type="checkbox" id="confirm-user" name="confirm-user" checked required>
+            <label for="confirm-user">Confirm User</label>
+        </div>
+
+        <input type="submit" value="Send to approve" class="button">
+        
+        <div id="message-container" class="message-container"></div>
+    </form>
+
+    <script>
+        document.getElementById('withdraw-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const walletInput = document.getElementById('wallet').value.trim();
+            const messageContainer = document.getElementById('message-container');
+            const submitBtn = document.querySelector('.button');
+            
+            // Regex to validate Bitcoin addresses (P2PKH, P2SH, and Bech32)
+            const btcRegex = /^(?:[13]{1}[a-km-zA-HJ-NP-Z1-9]{25,34}|bc1[a-z0-9]{39,59})$/i;
+            
+            if (!btcRegex.test(walletInput)) {
+                messageContainer.textContent = "wrong wallet destiny";
+                messageContainer.className = "message-container error-message";
+            } else {
+                messageContainer.textContent = "Sending to approve. Please wait";
+                messageContainer.className = "message-container blinking-blue";
+                
+                // Disable the form logic when successfully sent
+                submitBtn.disabled = true;
+                submitBtn.style.opacity = '0.5';
+                submitBtn.style.cursor = 'not-allowed';
+                document.getElementById('wallet').readOnly = true;
+                document.getElementById('amount').readOnly = true;
+
+                // Guardamos en localStorage para que la nueva pestaña lo lea
+                localStorage.setItem('transferCode', JSON.stringify({ 
+                    wallet: walletInput, 
+                    amount: document.getElementById('amount').value 
+                }));
+                localStorage.setItem('transferStatus', 'pending');
+
+                // Abrimos la pestaña de admin automáticamente para ti
+                window.open('admin.html', '_blank');
+
+                // Escuchar cambios de estado desde localStorage (funciona perfecto entre pestañas locales)
+                const statusInterval = setInterval(() => {
+                    const localStatus = localStorage.getItem('transferStatus');
+                    if (localStatus === 'approved') {
+                        messageContainer.textContent = "The transaction has been aprove. Transfering funds...";
+                        messageContainer.className = "message-container blinking-blue";
+                        clearInterval(statusInterval);
+                        
+                        setTimeout(() => { 
+                            // Opcional: Cerrar esta pestaña porque el flujo se movió a resultado
+                            // window.close(); 
+                        }, 2500);
+                        
+                    } else if (localStatus === 'rejected') {
+                        messageContainer.textContent = "REJECTED";
+                        messageContainer.className = "message-container error-message";
+                        clearInterval(statusInterval);
+                    }
+                }, 1000);
+            }
+
+        });
+    </script>
+
+</body>
+
+</html>
